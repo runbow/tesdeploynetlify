@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hydro-Data Dashboard</title>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0e1117; color: white; margin: 0; display: flex; height: 100vh; }
+        
+        /* Sidebar Styles */
+        .sidebar { width: 300px; background: #262730; padding: 20px; border-right: 1px solid #464b5d; overflow-y: auto; }
+        .file-item { margin-bottom: 10px; padding: 8px; background: #0e1117; border-radius: 5px; }
+        
+        /* Main Content Area */
+        .main-content { flex-grow: 1; padding: 40px; display: flex; flex-direction: column; }
+        .button-group { display: flex; gap: 10px; margin-bottom: 30px; }
+        
+        button { 
+            padding: 12px 20px; 
+            background-color: #ff4b4b; 
+            border: none; 
+            color: white; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            transition: 0.3s;
+        }
+        button:hover { background-color: #e03a3a; transform: translateY(-2px); }
+        
+        /* Results Area */
+        #output-container { 
+            background: #1a1c24; 
+            border: 1px solid #464b5d; 
+            border-radius: 10px; 
+            padding: 20px; 
+            min-height: 200px; 
+            font-family: 'Courier New', monospace;
+        }
+        .status-text { color: #888; margin-bottom: 10px; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="scope-info">
+            <p><strong>Allowed Range:</strong></p>
+            {% for scope in scopes %}
+                <p style="color: #00ff00;">{{ scope.start_date }} to {{ scope.end_date }}</p>
+            {% else %}
+                <p style="color: #ff4b4b; font-size: 0.8rem;">
+                    No data access permissions assigned. Please contact your administrator.
+                </p>
+            {% endfor %}
+        </div>
+        <hr style="border: 0.5px solid #464b5d; margin: 20px 0;">
+        <a href="/logout" style="color: #ff4b4b; text-decoration: none; font-size: 0.9rem;">Logout</a>
+    </div>
+
+    <div class="main-content">
+        <h1>Data Processing</h1>
+        <p>Choose a method to apply to selected files:</p>
+        
+        {% for scope in scopes %}
+        <div class="button-group">
+            <button onclick="runTask('hourly', '{{ scope.start_date }}', '{{ scope.end_date }}')">Calculate Hourly Sum</button>
+            <button onclick="runTask('daily', '{{ scope.start_date }}', '{{ scope.end_date }}')">Calculate Daily Average</button>
+        </div>
+        {% endfor %}
+        
+        <div class="status-text" id="status-label">System: Ready</div>
+        <div id="output-container">
+            <div id="result-text">Execution results will appear here...</div>
+        </div>
+    </div>
+
+    <script>
+        function runTask(methodName, startDate, endDate) {
+            if (!startDate || !endDate || startDate === 'None' || endDate === 'None') {
+                alert("Error: No data access permissions assigned..");
+                return; 
+            }
+        
+            // Update UI Status
+            document.getElementById('status-label').innerText = `System: Processing ${methodName}...`;
+            document.getElementById('result-text').innerText = "Working...";
+
+            // 2. Fetch request to /run-task (handled by main_dashboard.py)
+            fetch('/run-task', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    start_date: startDate,
+                    end_date: endDate,
+                    method: methodName
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('status-label').innerText = "System: Success";
+                    // Display the "throw something" result from Python
+                    document.getElementById('result-text').innerHTML = `
+                        <p style="color: #00ff00;">> ${data.method_executed.toUpperCase()} COMPLETED</p>
+                        <p>${data.result}</p>
+                    `;
+                } else {
+                    document.getElementById('status-label').innerText = "System: Error";
+                    document.getElementById('result-text').innerText = "Error: " + data.error;
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById('status-label').innerText = "System: Connection Failed";
+            });
+        }
+    </script>
+</body>
+</html>

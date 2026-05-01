@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>New Data Request</title>
+    <style>
+        body { font-family: sans-serif; background: #0e1117; color: white; padding: 50px; }
+        .card { background: #262730; padding: 30px; border-radius: 10px; max-width: 500px; margin: auto; }
+        .input-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #888; }
+        input[type="date"], select { 
+            width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #464b5d; 
+            background: #0e1117; color: white; box-sizing: border-box;
+        }
+        button { 
+            width: 100%; padding: 12px; background: #ff4b4b; border: none; 
+            color: white; font-weight: bold; border-radius: 5px; cursor: pointer; 
+        }
+        button:hover { background: #e03a3a; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>Process Data Range</h2>
+        <p>Select the timeframe for your analysis.</p>
+        
+        <div class="input-group">
+            <label>Start Date</label>
+            <input type="date" id="start_date" required>
+        </div>
+
+        <div class="input-group">
+            <label>End Date</label>
+            <input type="date" id="end_date" required>
+        </div>
+
+        <div class="input-group">
+            <label>Processing Method</label>
+            <select id="method">
+                <option value="hourly">Hourly Cumulative</option>
+                <option value="daily">Daily Average</option>
+                <option value="diurnal">Diurnal Analysis</option>
+            </select>
+        </div>
+
+        <button onclick="submitRequest()">Generate Report</button>
+        
+        <div id="status" style="margin-top: 15px; text-align: center;"></div>
+    </div>
+
+    <script>
+        function submitRequest() {
+            const start = document.getElementById('start_date').value;
+            const end = document.getElementById('end_date').value;
+            const method = document.getElementById('method').value;
+
+            if (!start || !end) {
+                alert("Please select both dates!");
+                return;
+            }
+
+            document.getElementById('status').innerText = "Generating paths...";
+
+            // Send to your task handler
+            fetch('/run-task', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    start_date: start,
+                    end_date: end,
+                    method: method
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    document.getElementById('status').innerHTML = `<span style="color:green">Success! Download starting...</span>`;
+                    // (Insert the Blob download logic here later)
+                } else {
+                    document.getElementById('status').innerHTML = `<span style="color:red">Error: ${data.error}</span>`;
+                }
+            });
+        }
+    </script>
+</body>
+</html>

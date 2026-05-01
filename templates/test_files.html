@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>File Access Test</title>
+    <style>
+        body { font-family: sans-serif; padding: 50px; background-color: #0e1117; color: white; }
+        .path-box { background: #262730; padding: 15px; border-left: 5px solid #ff4b4b; margin: 10px 0; font-family: monospace; }
+        a { color: #ff4b4b; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <h1>Welcome, {{ current_user.username }}!</h1>
+    <p>Your database permissions allow you to see these file paths:</p>
+    
+    {% if paths %}
+        {% for path in paths %}
+            <div class="path-box">{{ path }}</div>
+        {% endfor %}
+    {% else %}
+        <p>No file paths assigned to your user account.</p>
+    {% endif %}
+
+    <hr>
+    <a href="{{ url_for('logout') }}">Sign Out</a>
+</body>
+</html>

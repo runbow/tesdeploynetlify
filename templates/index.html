@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hydro-Climate Data Converter</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #ff4b4b; /* Streamlit Red */
+            --bg-color: #ffffff;
+            --sidebar-bg: #f0f2f6;
+            --text-color: #31333f;
+            --secondary-text: #5e616c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Source Sans Pro', sans-serif;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            width: 300px;
+            background-color: var(--sidebar-bg);
+            padding: 40px 20px;
+            position: fixed;
+            height: 100vh;
+            border-right: 1px solid #e6e9ef;
+        }
+
+        .sidebar h2 {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: var(--text-color);
+        }
+
+        .sidebar-section {
+            margin-bottom: 30px;
+        }
+
+        /* --- MAIN CONTENT --- */
+        .main {
+            margin-left: 300px;
+            flex: 1;
+            padding: 40px 60px;
+            max-width: 1200px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .description {
+            color: var(--secondary-text);
+            margin-bottom: 40px;
+            font-size: 1.1rem;
+        }
+
+        /* --- STREAMLIT STYLE COMPONENTS --- */
+        .st-card {
+            border: 1px solid #e6e9ef;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-zone {
+            border: 1px solid #dcdfe3;
+            border-radius: 0.5rem;
+            padding: 20px;
+            background: white;
+            cursor: pointer;
+        }
+
+        button {
+            background-color: white;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        button.primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        /* --- GRID SYSTEM --- */
+        .row {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .col-1 { flex: 1; }
+        .col-2 { flex: 2; }
+
+        /* --- UTILS --- */
+        .st-info {
+            background-color: rgba(28, 131, 225, 0.1);
+            color: rgb(0, 68, 116);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        #file-items {
+            font-size: 0.85rem;
+            color: var(--secondary-text);
+            margin-top: 10px;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>⚙️ Conversion Settings</h2>
+        <div class="sidebar-section">
+            <p style="font-size: 0.9rem; margin-bottom: 10px;">Output Type:</p>
+            <select id="conversion-type" style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc;">
+                <option>Hourly Cumulative</option>
+                <option>Daily Cumulative</option>
+                <option>Diurnal Pattern</option>
+            </select>
+        </div>
+        
+        <div id="actions-sidebar" style="display:none;">
+            <button id="download-btn" class="primary">⬇️ Download Results (CSV)</button>
+        </div>
+    </div>
+
+    <div class="main">
+        <h1>🌧️ Hydro-Climate Analyzer</h1>
+        <p class="description">Upload multiple CSV files to aggregate and convert minute-level data automatically.</p>
+
+        <div class="st-card">
+            <form id="upload-form">
+                <input type="file" id="files" name="files" accept=".csv" multiple style="width: 100%; margin-bottom: 10px;">
+                <button type="submit" class="primary">Analyze Data</button>
+            </form>
+            <div id="file-items"></div>
+        </div>
+
+        <div id="status-area">
+            <div class="st-info">👈 Please upload CSV files to start the analysis.</div>
+        </div>
+
+        <div id="results-area" style="display:none;">
+            <div class="row">
+                <div class="col-1">
+                    <h3>📊 Result Table</h3>
+                    <div id="stats-summary" style="margin-top:15px;"></div>
+                </div>
+
+                <div class="col-2">
+                    <h3>📈 Visualization</h3>
+                    <div id="chart" class="st-card" style="min-height: 400px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentCsvData = null;
+
+        // 1. Handle File Selection Preview
+        document.getElementById('files').addEventListener('change', function(e) {
+            const fileItems = document.getElementById('file-items');
+            fileItems.innerHTML = this.files.length > 0 
+                ? `📄 Selected: ${this.files.length} file(s)` 
+                : '';
+        });
+
+        // 2. Handle the "Analyze Data" Button Click
+        document.getElementById('upload-form').onsubmit = async function(e) {
+            e.preventDefault(); // Prevents the page from refreshing
+        
+            const fileInput = document.getElementById('files');
+            const statusArea = document.getElementById('status-area');
+            const resultsArea = document.getElementById('results-area');
+            const sidebarActions = document.getElementById('actions-sidebar');
+        
+            if (!fileInput.files.length) {
+                statusArea.innerHTML = '<div class="st-info" style="color: #ff4b4b;">❌ Please select at least one CSV file.</div>';
+                return;
+            }
+
+            // Show Loading State
+            statusArea.innerHTML = '<div class="st-info"><span class="spinner"></span> Processing your data...</div>';
+            resultsArea.style.display = 'none';
+
+            const formData = new FormData();
+            for (let file of fileInput.files) {
+                formData.append('files', file);
+            }
+
+            try {
+                const response = await fetch('/process', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || 'Server processing failed');
+                }
+
+                // Store CSV for download
+                currentCsvData = data.csv_data;
+
+                // 3. Update the UI with Stats (Left Column)
+                document.getElementById('stats-summary').innerHTML = `
+                    <div class="st-card">
+                        <p><strong>Total Files:</strong> ${data.total_files}</p>
+                        <p><strong>Total Records:</strong> ${data.total_combined_records}</p>
+                        <p><strong>Average:</strong> ${data.average}</p>
+                        <p><strong>Max Value:</strong> ${data.max_value}</p>
+                    </div>
+                `;
+
+                // 4. Render the Plotly Chart (Right Column)
+                const trace = {
+                    x: data.labels,
+                    y: data.values,
+                    type: 'bar',
+                    marker: { color: '#ff4b4b' } // Match Streamlit Red
+                };
+            
+                const layout = {
+                    margin: { t: 20, b: 40, l: 40, r: 20 },
+                    paper_bgcolor: 'rgba(0,0,0,0)',
+                    plot_bgcolor: 'rgba(0,0,0,0)'
+                };
+            
+                Plotly.newPlot('chart', [trace], layout, { responsive: true });
+
+                // Show Results and Sidebar Download
+                statusArea.innerHTML = `<div class="st-info" style="background: rgba(40, 167, 69, 0.1); color: #28a745;">✅ Success! Processed ${data.total_files} files.</div>`;
+                resultsArea.style.display = 'block';
+                sidebarActions.style.display = 'block';
+
+            } catch (error) {
+                statusArea.innerHTML = `<div class="st-info" style="color: #ff4b4b;">❌ Error: ${error.message}</div>`;
+            }
+        };
+
+        // 5. Handle Sidebar Download Button
+        document.getElementById('download-btn').onclick = function() {
+            if (!currentCsvData) return;
+            const blob = new Blob([currentCsvData], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'analysis_results.csv';
+            a.click();
+        };
+    </script>
+</body>
+</html>

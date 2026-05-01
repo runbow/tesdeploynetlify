@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hydro-Data Login</title>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0e1117; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: #262730; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); width: 300px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #464b5d; background: #0e1117; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background-color: #ff4b4b; border: none; color: white; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #e03a3a; }
+        h2 { text-align: center; margin-bottom: 20px; color: #ff4b4b; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h2>Data Portal</h2>
+        <form method="POST">
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit">Log In</button>
+        </form>
+    </div>
+</body>
+</html>

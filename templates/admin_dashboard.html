@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="sidebar">
+        <button onclick="loadView('home')">Dashboard</button>
+        <button onclick="loadView('create-user')">Create New User</button>
+        <a href="/logout" style="color: #ff4b4b; text-decoration: none; font-size: 0.9rem;">Logout</a>
+    </div>
+
+    <div class="main-content" id="main-content">
+        <h1>Welcome, Admin</h1>
+        <p>Select an option from the sidebar to begin.</p>
+    </div>
+
+    <script>
+        function loadView(viewName) {
+            fetch(`/admin/view/${viewName}`)
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('main-content').innerHTML = html;
+                });
+        }
+    </script>
+</body>
+</html>

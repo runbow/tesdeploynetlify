@@ -1,0 +1,22 @@
+<h2>Create New User</h2>
+<form id="create-user-form" action="/admin/create-user" method="POST">
+    <label>Username:</label>
+    <input type="text" name="username" required>
+    
+    <label>Password:</label>
+    <input type="password" name="password" required>
+    
+    <label>User Role:</label>
+    <select name="role_id">
+        <option value="1">Admin</option>
+        <option value="2">Standard User</option>
+    </select>
+    
+    <label>Start Date:</label>
+    <input type="date" name="start_date" required>
+    
+    <label>End Date:</label>
+    <input type="date" name="end_date" required>
+    
+    <button type="submit">Save User</button>
+</form>
