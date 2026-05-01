@@ -48,7 +48,8 @@ def load_user(user_id):
 
 @app.route('/')
 def home():
-    return redirect(url_for('login'))
+    #return redirect(url_for('login'))
+    return "Ok bisa jalan"
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
